@@ -1,0 +1,22 @@
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class UpdatePaymentRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'person_id' => ['sometimes', 'required', 'integer', 'exists:people,id'],
+            'payment_method' => ['sometimes', 'nullable', 'string', 'size:4'],
+            'payment_amount' => ['sometimes', 'required', 'numeric', 'gt:0'],
+        ];
+    }
+}

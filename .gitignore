@@ -1,5 +1,6 @@
 .idea
 frontend/.vscode/
 
+.env
 
 mysql
