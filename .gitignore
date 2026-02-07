@@ -4,3 +4,4 @@ frontend/.vscode/
 .env
 
 mysql
+redis
