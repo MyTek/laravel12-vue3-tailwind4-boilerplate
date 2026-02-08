@@ -31,6 +31,7 @@ class InvoiceController extends Controller
     public function update(UpdateInvoiceRequest $request, Invoice $invoice)
     {
         $invoice->update($request->validated());
+        event(new \App\Events\InvoiceUpdated($invoice->fresh()));
         return new InvoiceResource($invoice);
     }
 
