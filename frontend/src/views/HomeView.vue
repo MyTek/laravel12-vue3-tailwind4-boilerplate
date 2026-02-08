@@ -1,19 +1,22 @@
 <script setup lang="ts">
-import HelloWorld from '../components/HelloWorld.vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 </script>
 
 <template>
     <div>
         <div>
-            <a href="https://vite.dev" target="_blank">
-                <img src="/vite.svg" class="logo" alt="Vite logo" />
-            </a>
-            <a href="https://vuejs.org/" target="_blank">
-                <img src="../assets/vue.svg" class="logo vue" alt="Vue logo" />
-            </a>
-        </div>
+            <RouterLink :to="{ name: 'patient-billing-good' }">
+                good
+            </RouterLink>
 
-        <HelloWorld msg="Vite + Vue" />
+            <br />
+
+            <RouterLink :to="{ name: 'patient-billing-bad' }">
+                bad
+            </RouterLink>
+        </div>
     </div>
 </template>
 

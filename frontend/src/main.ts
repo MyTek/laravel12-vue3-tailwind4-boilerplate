@@ -4,6 +4,8 @@ import App from './App.vue'
 
 import HomeView from './views/HomeView.vue'
 import BillingPlayground from './views/BillingPlayground.vue'
+import PatientBillingBad from "@/components/test/PatientBillingBad.vue";
+import PatientBillingGood from "@/components/test/PatientBillingGood.vue";
 
 const router = createRouter({
     history: createWebHistory(),
@@ -17,6 +19,16 @@ const router = createRouter({
             path: '/billing',
             name: 'billing',
             component: BillingPlayground,
+        },
+        {
+            path: '/billing/patient-billing-bad',
+            name: 'patient-billing-bad',
+            component: PatientBillingBad,
+        },
+        {
+            path: '/billing/patient-billing-good',
+            name: 'patient-billing-good',
+            component: PatientBillingGood,
         },
     ],
 })
