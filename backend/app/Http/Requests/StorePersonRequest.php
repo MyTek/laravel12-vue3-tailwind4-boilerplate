@@ -16,6 +16,7 @@ class StorePersonRequest extends FormRequest
         return [
             'first_name' => ['nullable', 'string', 'max:35'],
             'last_name' => ['nullable', 'string', 'max:60'],
+            'use_factory' => ['sometimes', 'boolean'],
         ];
     }
 }

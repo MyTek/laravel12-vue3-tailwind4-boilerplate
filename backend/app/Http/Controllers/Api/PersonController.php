@@ -19,7 +19,16 @@ class PersonController extends Controller
 
     public function store(StorePersonRequest $request)
     {
-        $person = Person::create($request->validated());
+        $data = $request->validated();
+
+        // Allow quick fake creation for local/dev
+        // POST /api/v1/people { "use_factory": true }
+        if ($request->boolean('use_factory')) {
+            $person = Person::factory()->create();
+            return new PersonResource($person);
+        }
+
+        $person = Person::create($data);
         return new PersonResource($person);
     }
 

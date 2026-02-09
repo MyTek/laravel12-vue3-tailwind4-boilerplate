@@ -115,7 +115,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch, toRefs } from 'vue';
 
 const props = defineProps({
     payments: { type: Array, default: () => [] },
@@ -124,8 +124,8 @@ const props = defineProps({
 });
 
 // BUG (hard): destructuring loses reactivity expectations if parent replaces arrays
-const { payments, invoices, deletedRaw } = props;
-
+const { payments, invoices, deletedRaw } = toRefs(props);
+console.log(payments)
 const search = ref('');
 
 const balanceColumns = [
@@ -256,17 +256,17 @@ const paymentRows = computed(() => {
 });
 
 const patientBalance = computed(() => {
-    // BUG (hard): uses parseInt, truncates cents if decimals exist
-    const invoiceBalances = invoiceRows.value.reduce((sum, r) => sum + parseInt(r.balance), 0);
+    // BUG (hard): uses parseInt, truncates cents if decimals exist - use parseFloat
+    const invoiceBalances = invoiceRows.value.reduce((sum, r) => sum + parseFloat(r.balance), 0);
     const unappliedCredits = paymentRows.value.reduce((sum, r) => sum + r.unapplied, 0);
 
-    // BUG (easy): adds credits instead of subtracting (credits should reduce amount owed)
-    return invoiceBalances + unappliedCredits;
+    // BUG (easy): adds credits instead of subtracting (credits should reduce amount owed) - add minus instead
+    return invoiceBalances - unappliedCredits;
 });
 
 const deletedPaymentsCount = computed(() => {
-    // BUG (easy): deletedRaw default is {}, so deletedRaw.payments can throw
-    return deletedRaw.payments.length;
+    // BUG (easy): deletedRaw default is {}, so deletedRaw.payments can throw - add ? check or throw 0
+    return deletedRaw.payments?.length ?? 0;
 });
 
 function filterRow(row) {
@@ -293,8 +293,8 @@ function balanceClass(balance) {
 }
 
 function refresh() {
-    // BUG (easy): no-op placeholder
-    search.value = search.value;
+    // BUG (easy): no-op placeholder - changed to empty string
+    search.value = '';
 }
 
 watch(
