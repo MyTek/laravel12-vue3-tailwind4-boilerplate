@@ -15,6 +15,30 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2">
+                    <div class="flex items-center gap-2">
+                        <input
+                            v-model.number="selectedPersonId"
+                            type="number"
+                            class="w-40 rounded-lg border px-3 py-2 text-sm"
+                            placeholder="Person ID"
+                        />
+                        <button
+                            class="rounded-lg border px-3 py-2 text-sm hover:bg-slate-50"
+                            :disabled="loading || !selectedPersonId"
+                            @click="load"
+                        >
+                            Load
+                        </button>
+                    </div>
+
+                    <button
+                        class="rounded-lg border px-3 py-2 text-sm hover:bg-slate-50 disabled:opacity-50"
+                        :disabled="creatingPerson"
+                        @click="createPerson"
+                    >
+                        {{ creatingPerson ? 'Creating...' : 'Create Person' }}
+                    </button>
+
                     <button
                         class="rounded-lg border px-3 py-2 text-sm hover:bg-slate-50"
                         :disabled="loading"
@@ -400,6 +424,9 @@ const errorMsg = ref<string | null>(null)
 
 const payload = ref<BillingPayload | null>(null)
 
+const selectedPersonId = ref<number>(props.personId || 0)
+const creatingPerson = ref(false)
+
 function money(v: any): string {
     const n = Number(v ?? 0)
     const sign = n < 0 ? '-' : ''
@@ -432,7 +459,7 @@ async function load() {
     loading.value = true
     errorMsg.value = null
     try {
-        payload.value = await apiGet<BillingPayload>(`/api/v1/billing/patients/${props.personId}`)
+        payload.value = await apiGet<BillingPayload>(`/api/v1/billing/patients/${selectedPersonId.value || props.personId}`)
     } catch (e: any) {
         errorMsg.value = e?.message || 'Failed to load'
     } finally {
@@ -440,8 +467,28 @@ async function load() {
     }
 }
 
+async function createPerson() {
+    creatingPerson.value = true
+    errorMsg.value = null
+    try {
+        const created = await apiPost<{ data: Person }>(`/api/v1/people`, { use_factory: true })
+        const person = created?.data
+        if (person?.id) {
+            selectedPersonId.value = person.id
+            await load()
+        }
+    } catch (e: any) {
+        errorMsg.value = e?.message || 'Failed to create person'
+    } finally {
+        creatingPerson.value = false
+    }
+}
+
 onMounted(load)
-watch(() => props.personId, load)
+watch(() => props.personId, () => {
+    selectedPersonId.value = props.personId || 0
+    load()
+})
 
 /**
  * Table column definitions (q-table style)
@@ -642,7 +689,7 @@ async function applyCredit() {
             invoice_id: Number(applyForm.value.invoice_id),
             amount: Number(applyForm.value.amount),
         }
-        await apiPost(`/api/v1/billing/patients/${props.personId}/apply-credit`, body)
+        await apiPost(`/api/v1/billing/patients/${selectedPersonId.value || props.personId}/apply-credit`, body)
         applyForm.value.amount = ''
         await load()
     } catch (e: any) {
