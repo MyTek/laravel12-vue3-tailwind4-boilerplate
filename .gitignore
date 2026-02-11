@@ -1,7 +1,7 @@
 .idea
 frontend/.vscode/
 
-.env
+*.env
 
 mysql
 redis
