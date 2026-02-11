@@ -17,6 +17,16 @@ services:
     volumes:
       - app-src:/app
     restart: unless-stopped
+    environment:
+      # Tell Vite the public URL it is served from (behind Traefik TLS)
+      VITE_HMR_HOST: prompt.mytek.la
+      VITE_HMR_PROTOCOL: wss
+      VITE_HMR_PORT: 443
+
+      # Some setups also honor these generic vars
+      HMR_HOST: prompt.mytek.la
+      HMR_PROTOCOL: wss
+      HMR_PORT: 443
     networks:
       - traefik
       - default
@@ -24,18 +34,18 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik"
 
-      # Route ONLY Vite dev server paths on the SAME host to :5173
-      - "traefik.http.routers.prompt-vite.rule=Host(`prompt.mytek.la`) && (PathPrefix(`/@vite`) || PathPrefix(`/src`) || PathPrefix(`/node_modules`) || PathPrefix(`/vite`) || PathPrefix(`/__vite_ping`) || PathPrefix(`/@id`) || PathPrefix(`/@fs`))"
+      # Route ALL of prompt.mytek.la to Vite (SPA)
+      - "traefik.http.routers.prompt-vite.rule=Host(`prompt.mytek.la`)"
       - "traefik.http.routers.prompt-vite.entrypoints=web,websecure"
       - "traefik.http.routers.prompt-vite.tls=true"
       - "traefik.http.routers.prompt-vite.tls.certresolver=leresolver"
-      - "traefik.http.routers.prompt-vite.priority=100"
+      - "traefik.http.routers.prompt-vite.priority=1"
       - "traefik.http.services.prompt-vite.loadbalancer.server.port=5173"
 
       # Websocket support for HMR
-      - "traefik.http.middlewares.prompt-vite-ws.headers.customRequestHeaders.Connection=Upgrade"
-      - "traefik.http.middlewares.prompt-vite-ws.headers.customRequestHeaders.Upgrade=websocket"
-      - "traefik.http.routers.prompt-vite.middlewares=prompt-vite-ws@docker"
+#      - "traefik.http.middlewares.prompt-vite-ws.headers.customRequestHeaders.Connection=Upgrade"
+#      - "traefik.http.middlewares.prompt-vite-ws.headers.customRequestHeaders.Upgrade=websocket"
+#      - "traefik.http.routers.prompt-vite.middlewares=prompt-vite-ws@docker"
 
   ##########################################################################
   # 2) Backend - Bitnami Laravel
@@ -82,19 +92,16 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik"
 
-      # Main app on the SAME host
-      - "traefik.http.routers.prompt.rule=Host(`prompt.mytek.la`)"
+      # API app
+      - "traefik.http.routers.prompt.rule=Host(`api-prompt.mytek.la`)"
       - "traefik.http.routers.prompt.entrypoints=web,websecure"
       - "traefik.http.routers.prompt.tls=true"
       - "traefik.http.routers.prompt.tls.certresolver=leresolver"
       - "traefik.http.routers.prompt.priority=1"
       - "traefik.http.services.prompt.loadbalancer.server.port=80"
 
-      ##################################################################
-      # Optional: match toastedui cache/headers style
-      ##################################################################
-      - "traefik.http.middlewares.prompt-html-cache.headers.customResponseHeaders.Cache-Control=no-cache,no-store,must-revalidate"
-      - "traefik.http.routers.prompt.middlewares=prompt-html-cache@docker"
+#      - "traefik.http.middlewares.prompt-html-cache.headers.customResponseHeaders.Cache-Control=no-cache,no-store,must-revalidate"
+#      - "traefik.http.routers.prompt.middlewares=prompt-html-cache@docker"
 
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:80 || exit 1"]
