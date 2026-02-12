@@ -7,6 +7,8 @@ use App\Http\Requests\StoreInvoiceRequest;
 use App\Http\Requests\UpdateInvoiceRequest;
 use App\Http\Resources\InvoiceResource;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
+use App\Models\Person;
 
 class InvoiceController extends Controller
 {
@@ -20,6 +22,11 @@ class InvoiceController extends Controller
     public function store(StoreInvoiceRequest $request)
     {
         $invoice = Invoice::create($request->validated());
+
+        $invoice->items()->create(
+            InvoiceItem::factory()->make()->toArray()
+        );
+
         return new InvoiceResource($invoice);
     }
 

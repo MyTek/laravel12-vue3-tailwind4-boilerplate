@@ -7,6 +7,7 @@ use App\Http\Requests\StorePaymentRequest;
 use App\Http\Requests\UpdatePaymentRequest;
 use App\Http\Resources\PaymentResource;
 use App\Models\Payment;
+use App\Models\Person;
 
 class PaymentController extends Controller
 {
@@ -19,7 +20,14 @@ class PaymentController extends Controller
 
     public function store(StorePaymentRequest $request)
     {
-        $payment = Payment::create($request->validated());
+        $data = $request->validated();
+
+        if ($request->boolean('use_factory')) {
+            $payment = Payment::factory()->create($data);
+            return new PaymentResource($payment);
+        }
+
+        $payment = Payment::create($data);
         return new PaymentResource($payment);
     }
 

@@ -16,7 +16,7 @@ class StorePaymentRequest extends FormRequest
         return [
             'person_id' => ['required', 'integer', 'exists:people,id'],
             'payment_method' => ['nullable', 'string', 'size:4'],
-            'payment_amount' => ['required', 'numeric', 'gt:0'],
+            'payment_amount' => ['nullable', 'numeric', 'gt:0'],
         ];
     }
 }

@@ -40,6 +40,22 @@
                     </button>
 
                     <button
+                        class="rounded-lg border px-3 py-2 text-sm hover:bg-slate-50 disabled:opacity-50"
+                        :disabled="creatingInvoice"
+                        @click="createInvoice"
+                    >
+                        {{ creatingInvoice ? 'Creating...' : 'Create Invoice' }}
+                    </button>
+
+                    <button
+                        class="rounded-lg border px-3 py-2 text-sm hover:bg-slate-50 disabled:opacity-50"
+                        :disabled="creatingPayment"
+                        @click="createPayment"
+                    >
+                        {{ creatingPayment ? 'Creating...' : 'Create Payment' }}
+                    </button>
+
+                    <button
                         class="rounded-lg border px-3 py-2 text-sm hover:bg-slate-50"
                         :disabled="loading"
                         @click="load"
@@ -426,6 +442,8 @@ const payload = ref<BillingPayload | null>(null)
 
 const selectedPersonId = ref<number>(props.personId || 0)
 const creatingPerson = ref(false)
+const creatingInvoice = ref(false)
+const creatingPayment = ref(false)
 
 function money(v: any): string {
     const n = Number(v ?? 0)
@@ -476,11 +494,49 @@ async function createPerson() {
         if (person?.id) {
             selectedPersonId.value = person.id
             await load()
+        } else {
+            throw new Error(`Invoice creation error.`)
         }
     } catch (e: any) {
         errorMsg.value = e?.message || 'Failed to create person'
     } finally {
         creatingPerson.value = false
+    }
+}
+
+async function createInvoice() {
+    creatingInvoice.value = true
+    errorMsg.value = null
+    try {
+        const created = await apiPost<{ data: Person }>(`/api/v1/invoices`, { person_id: selectedPersonId.value })
+        const invoice = created?.data
+        if  (!invoice.id) {
+            throw new Error(`Invoice creation error.`)
+        }
+        // if (invoice?.id) {
+        //     selectedPersonId.value = invoice.id
+        //     await load()
+        // }
+    } catch (e: any) {
+        errorMsg.value = e?.message || 'Failed to create invoice'
+    } finally {
+        creatingInvoice.value = false
+    }
+}
+
+async function createPayment() {
+    creatingPayment.value = true
+    errorMsg.value = null
+    try {
+        const created = await apiPost<{ data: Person }>(`/api/v1/payments/`, { person_id: selectedPersonId.value, use_factory: true })
+        const payment = created?.data
+        if  (!payment.id) {
+            throw new Error(`Payment creation error.`)
+        }
+    } catch (e: any) {
+        errorMsg.value = e?.message || 'Failed to create payment'
+    } finally {
+        creatingPayment.value = false
     }
 }
 

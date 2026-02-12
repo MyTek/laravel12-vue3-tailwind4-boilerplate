@@ -21,8 +21,6 @@ class PersonController extends Controller
     {
         $data = $request->validated();
 
-        // Allow quick fake creation for local/dev
-        // POST /api/v1/people { "use_factory": true }
         if ($request->boolean('use_factory')) {
             $person = Person::factory()->create();
             return new PersonResource($person);
