@@ -6,6 +6,7 @@ import App from './App.vue'
 
 import HomeView from './views/HomeView.vue'
 import PatientBilling from "@/views/PatientBilling.vue";
+// import PatientBillingTest from "@/views/PatientBillingTest.vue";
 import PatientBillingBad from "@/components/test/PatientBillingBad.vue";
 import PatientBillingGood from "@/components/test/PatientBillingGood.vue";
 
@@ -32,6 +33,11 @@ const router = createRouter({
             name: 'patient-billing-good',
             component: PatientBillingGood,
         },
+        // {
+        //     path: '/billing/patient-billing-test',
+        //     name: 'patient-billing-test',
+        //     component: PatientBillingTest,
+        // },
     ],
 })
 
