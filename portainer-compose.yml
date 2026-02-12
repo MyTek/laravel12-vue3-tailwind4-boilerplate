@@ -92,29 +92,36 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik"
 
-      # API app
-      - "traefik.http.routers.prompt.rule=Host(`api-prompt.mytek.la`)"
+      # -----------------------------
+      # API (Laravel) on port 80
+      # -----------------------------
+      - "traefik.http.routers.prompt.rule=Host(`api-prompt.mytek.la`) && !PathPrefix(`/app`)"
       - "traefik.http.routers.prompt.entrypoints=web,websecure"
       - "traefik.http.routers.prompt.tls=true"
       - "traefik.http.routers.prompt.tls.certresolver=leresolver"
       - "traefik.http.routers.prompt.priority=1"
+      - "traefik.http.routers.prompt.service=prompt"
       - "traefik.http.services.prompt.loadbalancer.server.port=80"
 
-      # Reverb websockets (same host, only /app goes to reverb port)
-      - "traefik.http.routers.prompt-reverb.rule=Host(`api-prompt.mytek.la`) && PathPrefix(`/app`)"
-      - "traefik.http.routers.prompt-reverb.entrypoints=web,websecure"
-      - "traefik.http.routers.prompt-reverb.tls=true"
-      - "traefik.http.routers.prompt-reverb.tls.certresolver=leresolver"
-      - "traefik.http.routers.prompt-reverb.priority=10"
-      - "traefik.http.services.prompt-reverb.loadbalancer.server.port=8081"
+      # CORS middleware (Traefik-level)
       - "traefik.http.middlewares.prompt-cors.headers.accessControlAllowOriginList=*"
       - "traefik.http.middlewares.prompt-cors.headers.accessControlAllowMethods=GET,POST,PUT,PATCH,DELETE,OPTIONS"
       - "traefik.http.middlewares.prompt-cors.headers.accessControlAllowHeaders=*"
       - "traefik.http.middlewares.prompt-cors.headers.accessControlExposeHeaders=*"
       - "traefik.http.middlewares.prompt-cors.headers.accessControlMaxAge=100"
       - "traefik.http.middlewares.prompt-cors.headers.addVaryHeader=true"
-
       - "traefik.http.routers.prompt.middlewares=prompt-cors@docker"
+
+      # -----------------------------
+      # Reverb websocket on port 8081
+      # -----------------------------
+      - "traefik.http.routers.prompt-reverb.rule=Host(`api-prompt.mytek.la`) && PathPrefix(`/app`)"
+      - "traefik.http.routers.prompt-reverb.entrypoints=web,websecure"
+      - "traefik.http.routers.prompt-reverb.tls=true"
+      - "traefik.http.routers.prompt-reverb.tls.certresolver=leresolver"
+      - "traefik.http.routers.prompt-reverb.priority=10"
+      - "traefik.http.routers.prompt-reverb.service=prompt-reverb"
+      - "traefik.http.services.prompt-reverb.loadbalancer.server.port=8081"
 
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:80 || exit 1"]
