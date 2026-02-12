@@ -24,9 +24,6 @@ const echo = new Echo({
     wsPort: Number(import.meta.env?.VITE_REVERB_PORT ?? 8081),
     wssPort: Number(import.meta.env?.VITE_REVERB_PORT ?? 8081),
 
-    // IMPORTANT: Reverb uses /app and then Echo/Pusher adds /<key>
-    wsPath: import.meta.env?.VITE_REVERB_PATH ?? "",
-
     forceTLS: String(import.meta.env?.VITE_REVERB_SCHEME ?? 'http').toLowerCase() === 'https',
     encrypted: String(import.meta.env?.VITE_REVERB_SCHEME ?? 'http').toLowerCase() === 'https',
 
