@@ -9,7 +9,6 @@ console.log('[echo.ts] env', {
     host: import.meta.env?.VITE_REVERB_HOST,
     port: import.meta.env?.VITE_REVERB_PORT,
     scheme: import.meta.env?.VITE_REVERB_SCHEME,
-    path: import.meta.env?.VITE_REVERB_PATH,
 })
 
 const echo = new Echo({
@@ -25,7 +24,7 @@ const echo = new Echo({
     wssPort: Number(import.meta.env?.VITE_REVERB_PORT ?? 8081),
 
     // IMPORTANT: Reverb uses /app and then Echo/Pusher adds /<key>
-    wsPath: import.meta.env?.VITE_REVERB_PATH ?? "",
+    // wsPath: import.meta.env?.VITE_REVERB_PATH ?? "",
 
     forceTLS: String(import.meta.env?.VITE_REVERB_SCHEME ?? 'http').toLowerCase() === 'https',
     encrypted: String(import.meta.env?.VITE_REVERB_SCHEME ?? 'http').toLowerCase() === 'https',
