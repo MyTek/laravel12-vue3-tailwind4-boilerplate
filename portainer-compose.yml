@@ -107,6 +107,14 @@ services:
       - "traefik.http.routers.prompt-reverb.tls.certresolver=leresolver"
       - "traefik.http.routers.prompt-reverb.priority=10"
       - "traefik.http.services.prompt-reverb.loadbalancer.server.port=8081"
+      - "traefik.http.middlewares.prompt-cors.headers.accessControlAllowOriginList=*"
+      - "traefik.http.middlewares.prompt-cors.headers.accessControlAllowMethods=GET,POST,PUT,PATCH,DELETE,OPTIONS"
+      - "traefik.http.middlewares.prompt-cors.headers.accessControlAllowHeaders=*"
+      - "traefik.http.middlewares.prompt-cors.headers.accessControlExposeHeaders=*"
+      - "traefik.http.middlewares.prompt-cors.headers.accessControlMaxAge=100"
+      - "traefik.http.middlewares.prompt-cors.headers.addVaryHeader=true"
+
+      - "traefik.http.routers.prompt.middlewares=prompt-cors@docker"
 
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:80 || exit 1"]
