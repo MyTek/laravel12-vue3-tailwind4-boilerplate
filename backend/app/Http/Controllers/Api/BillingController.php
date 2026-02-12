@@ -213,6 +213,8 @@ class BillingController extends Controller
                 'amount' => $amount,
             ]);
 
+//            event(new \App\Events\InvoiceUpdated($invoice->fresh()));
+
             return response()->json([
                 'message' => 'Credit applied.',
                 'invoice_payment' => [

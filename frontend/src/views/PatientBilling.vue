@@ -370,115 +370,67 @@
 
     </div>
 </template>
-<script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+<script setup>
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import api from '@/lib/axios'
 
-type Person = {
-    id: number
-    first_name: string | null
-    last_name: string | null
-}
+/**
+ * Reverb / Echo (no auth)
+ * Requires: npm i laravel-echo pusher-js
+ */
+import echo from '@/lib/echo'
 
-type Invoice = {
-    id: number
-    person_id: number
-    total_amount: string
-    paid_amount: string
-    balance: string
-    settled: boolean
-    created_at?: string
-}
+const props = defineProps({
+    personId: { type: Number, required: true, default: 1 },
+    apiBaseUrl: { type: String, default: undefined },
+})
 
-type Payment = {
-    id: number
-    person_id: number
-    payment_method: string | null
-    payment_amount: string
-    deleted_at: string | null
-    created_at?: string
-}
-
-type InvoicePayment = {
-    id: number
-    payment_id: number
-    invoice_id: number | null
-    amount: string
-    created_at?: string
-}
-
-type DeletedRaw = {
-    payments: Payment[]
-    invoice_payments: InvoicePayment[]
-}
-
-type BillingPayload = {
-    person: Person
-    invoices: Invoice[]
-    payments: Payment[]
-    invoice_payments: InvoicePayment[]
-    deleted_raw: DeletedRaw
-}
-
-type Column<Row> = {
-    name: string
-    label: string
-    field: (row: Row) => any
-    sort?: (a: any, b: any, rowA: Row, rowB: Row) => number
-    format?: (val: any, row: Row) => string
-}
-
-const props = defineProps<{
-    personId: number
-    apiBaseUrl?: string
-}>()
-
-const apiBaseUrl = computed(() => props.apiBaseUrl ?? (import.meta as any).env?.VITE_API_BASE_URL ?? '')
+const apiBaseUrl = computed(() => props.apiBaseUrl ?? (import.meta).env?.VITE_API_BASE_URL ?? '')
 
 const loading = ref(false)
-const errorMsg = ref<string | null>(null)
+const errorMsg = ref(null)
 
-const payload = ref<BillingPayload | null>(null)
+const payload = ref(null)
 
-const selectedPersonId = ref<number>(props.personId || 0)
+const selectedPersonId = ref(props.personId || 0)
 const creatingPerson = ref(false)
 const creatingInvoice = ref(false)
 const creatingPayment = ref(false)
 
-function money(v: any): string {
+function money(v) {
     const n = Number(v ?? 0)
     const sign = n < 0 ? '-' : ''
     const abs = Math.abs(n)
     return `${sign}$${abs.toFixed(2)}`
 }
 
-function num(v: any): number {
+function num(v) {
     const n = Number(v)
     return Number.isFinite(n) ? n : 0
 }
 
-async function apiGet<T>(path: string): Promise<T> {
-    const prev = (api.defaults as any).baseURL
-    ;(api.defaults as any).baseURL = apiBaseUrl.value || prev
+async function apiGet(path) {
+    const prev = api.defaults.baseURL
+    api.defaults.baseURL = apiBaseUrl.value || prev
     const res = await api.get(path)
-    ;(api.defaults as any).baseURL = prev
-    return res.data as T
+    api.defaults.baseURL = prev
+    return res.data
 }
 
-async function apiPost<T>(path: string, body: any): Promise<T> {
-    const prev = (api.defaults as any).baseURL
-    ;(api.defaults as any).baseURL = apiBaseUrl.value || prev
+async function apiPost(path, body) {
+    const prev = api.defaults.baseURL
+    api.defaults.baseURL = apiBaseUrl.value || prev
     const res = await api.post(path, body ?? {})
-    ;(api.defaults as any).baseURL = prev
-    return res.data as T
+    api.defaults.baseURL = prev
+    return res.data
 }
 
 async function load() {
     loading.value = true
     errorMsg.value = null
     try {
-        payload.value = await apiGet<BillingPayload>(`/api/v1/billing/patients/${selectedPersonId.value || props.personId}`)
-    } catch (e: any) {
+        payload.value = await apiGet(`/api/v1/billing/patients/${selectedPersonId.value || props.personId}`)
+    } catch (e) {
         errorMsg.value = e?.message || 'Failed to load'
     } finally {
         loading.value = false
@@ -489,7 +441,7 @@ async function createPerson() {
     creatingPerson.value = true
     errorMsg.value = null
     try {
-        const created = await apiPost<{ data: Person }>(`/api/v1/people`, { use_factory: true })
+        const created = await apiPost(`/api/v1/people`, { use_factory: true })
         const person = created?.data
         if (person?.id) {
             selectedPersonId.value = person.id
@@ -497,7 +449,7 @@ async function createPerson() {
         } else {
             throw new Error(`Invoice creation error.`)
         }
-    } catch (e: any) {
+    } catch (e) {
         errorMsg.value = e?.message || 'Failed to create person'
     } finally {
         creatingPerson.value = false
@@ -508,16 +460,13 @@ async function createInvoice() {
     creatingInvoice.value = true
     errorMsg.value = null
     try {
-        const created = await apiPost<{ data: Person }>(`/api/v1/invoices`, { person_id: selectedPersonId.value })
+        const created = await apiPost(`/api/v1/invoices`, { person_id: selectedPersonId.value })
         const invoice = created?.data
-        if  (!invoice.id) {
+        if (!invoice?.id) {
             throw new Error(`Invoice creation error.`)
         }
-        // if (invoice?.id) {
-        //     selectedPersonId.value = invoice.id
-        //     await load()
-        // }
-    } catch (e: any) {
+        await load()
+    } catch (e) {
         errorMsg.value = e?.message || 'Failed to create invoice'
     } finally {
         creatingInvoice.value = false
@@ -528,28 +477,84 @@ async function createPayment() {
     creatingPayment.value = true
     errorMsg.value = null
     try {
-        const created = await apiPost<{ data: Person }>(`/api/v1/payments/`, { person_id: selectedPersonId.value, use_factory: true })
+        const created = await apiPost(`/api/v1/payments/`, { person_id: selectedPersonId.value, use_factory: true })
         const payment = created?.data
-        if  (!payment.id) {
+        if (!payment?.id) {
             throw new Error(`Payment creation error.`)
         }
-    } catch (e: any) {
+        await load()
+    } catch (e) {
         errorMsg.value = e?.message || 'Failed to create payment'
     } finally {
         creatingPayment.value = false
     }
 }
 
-onMounted(load)
+/**
+ * Reverb subscriptions
+ * Backend must broadcast on public Channel('person.{id}') and use broadcastAs()
+ * Example event names used here:
+ *  - invoice.created
+ *  - invoice.updated
+ *  - payment.created
+ *  - credit.applied (optional)
+ */
+let currentChannelName = null
+
+function leaveCurrentChannel() {
+    if (currentChannelName) {
+        echo.leave(currentChannelName)
+        currentChannelName = null
+    }
+}
+
+function joinPersonChannel(personId) {
+    leaveCurrentChannel()
+
+    const pid = Number(personId)
+    if (!pid) return
+
+    const name = `person.${pid}`
+    currentChannelName = name
+
+    echo.channel(name)
+        .listen('.invoice.created', async () => {
+            await load()
+        })
+        .listen('.invoice.updated', async () => {
+            await load()
+        })
+        .listen('.payment.created', async () => {
+            await load()
+        })
+        .listen('.credit.applied', async () => {
+            await load()
+        })
+}
+
+onMounted(async () => {
+    await load()
+    joinPersonChannel(selectedPersonId.value || props.personId)
+})
+
 watch(() => props.personId, () => {
     selectedPersonId.value = props.personId || 0
     load()
+    joinPersonChannel(selectedPersonId.value || props.personId)
+})
+
+watch(selectedPersonId, (newVal) => {
+    joinPersonChannel(newVal || props.personId)
+})
+
+onUnmounted(() => {
+    leaveCurrentChannel()
 })
 
 /**
  * Table column definitions (q-table style)
  */
-const balanceColumns = computed<Column<Invoice>[]>(() => [
+const balanceColumns = computed(() => [
     {
         name: 'id',
         label: 'Invoice #',
@@ -586,7 +591,7 @@ const balanceColumns = computed<Column<Invoice>[]>(() => [
     },
 ])
 
-const paymentColumns = computed<Column<Payment>[]>(() => [
+const paymentColumns = computed(() => [
     {
         name: 'id',
         label: 'Payment #',
@@ -614,7 +619,7 @@ const paymentColumns = computed<Column<Payment>[]>(() => [
     },
 ])
 
-const invoicePaymentColumns = computed<Column<InvoicePayment>[]>(() => [
+const invoicePaymentColumns = computed(() => [
     {
         name: 'id',
         label: '#',
@@ -651,15 +656,15 @@ const invoicePaymentColumns = computed<Column<InvoicePayment>[]>(() => [
 /**
  * Sorting
  */
-const invoiceSort = ref<{ col: string; dir: 'asc' | 'desc' }>({ col: 'id', dir: 'asc' })
-const paymentSort = ref<{ col: string; dir: 'asc' | 'desc' }>({ col: 'id', dir: 'asc' })
-const invoicePaymentSort = ref<{ col: string; dir: 'asc' | 'desc' }>({ col: 'id', dir: 'asc' })
+const invoiceSort = ref({ col: 'id', dir: 'asc' })
+const paymentSort = ref({ col: 'id', dir: 'asc' })
+const invoicePaymentSort = ref({ col: 'id', dir: 'asc' })
 
-function sortRows<Row>(rows: Row[], cols: Column<Row>[], state: { col: string; dir: 'asc' | 'desc' }) {
+function sortRows(rows, cols, state) {
     const col = cols.find(c => c.name === state.col)
     if (!col) return rows
     const copy = [...rows]
-    copy.sort((ra: any, rb: any) => {
+    copy.sort((ra, rb) => {
         const a = col.field(ra)
         const b = col.field(rb)
         const s = col.sort ? col.sort(a, b, ra, rb) : String(a).localeCompare(String(b))
@@ -688,7 +693,7 @@ const invoicePaymentsSorted = computed(() => {
  * PaymentAmount becomes credits; credits applied are sum(invoice_payments.amount) by payment_id.
  */
 const appliedByPaymentId = computed(() => {
-    const map = new Map<number, number>()
+    const map = new Map()
     const ips = payload.value?.invoice_payments ?? []
     for (const ip of ips) {
         map.set(ip.payment_id, (map.get(ip.payment_id) ?? 0) + num(ip.amount))
@@ -697,7 +702,7 @@ const appliedByPaymentId = computed(() => {
 })
 
 const availableCreditsByPaymentId = computed(() => {
-    const map = new Map<number, number>()
+    const map = new Map()
     const pays = payload.value?.payments ?? []
     for (const p of pays) {
         const paid = num(p.payment_amount)
@@ -723,9 +728,9 @@ const totalAvailable = computed(() => totalCredits.value - totalApplied.value)
  * Apply credit UI
  */
 const applyForm = ref({
-    payment_id: '' as any,
-    invoice_id: '' as any,
-    amount: '' as any,
+    payment_id: '' ,
+    invoice_id: '' ,
+    amount: '' ,
 })
 
 const applying = ref(false)
@@ -748,14 +753,14 @@ async function applyCredit() {
         await apiPost(`/api/v1/billing/patients/${selectedPersonId.value || props.personId}/apply-credit`, body)
         applyForm.value.amount = ''
         await load()
-    } catch (e: any) {
+    } catch (e) {
         errorMsg.value = e?.message || 'Failed to apply credit'
     } finally {
         applying.value = false
     }
 }
 
-function setSort(state: any, col: string) {
+function setSort(state, col) {
     if (state.col === col) {
         state.dir = state.dir === 'asc' ? 'desc' : 'asc'
     } else {

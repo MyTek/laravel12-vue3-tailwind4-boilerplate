@@ -9,6 +9,7 @@ use App\Http\Resources\InvoiceResource;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Person;
+use Illuminate\Support\Facades\Log;
 
 class InvoiceController extends Controller
 {
@@ -27,8 +28,17 @@ class InvoiceController extends Controller
             InvoiceItem::factory()->make()->toArray()
         );
 
+        Log::error('broadcast driver', [
+            'default' => config('broadcasting.default'),
+            'connection' => env('BROADCAST_CONNECTION'),
+            'driver' => env('BROADCAST_DRIVER'),
+        ]);
+
+        event(new \App\Events\InvoiceCreated($invoice->fresh()));
+
         return new InvoiceResource($invoice);
     }
+
 
     public function show(Invoice $invoice)
     {

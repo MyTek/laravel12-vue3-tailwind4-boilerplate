@@ -9,7 +9,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 
-class InvoiceUpdated implements ShouldBroadcast
+class InvoiceCreated implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -19,26 +19,19 @@ class InvoiceUpdated implements ShouldBroadcast
 
     public function broadcastOn(): Channel
     {
-        // Public channel, no auth required
         return new Channel('person.'.$this->invoice->person_id);
     }
 
     public function broadcastAs(): string
     {
-        return 'invoice.updated';
+        return 'invoice.created';
     }
 
     public function broadcastWith(): array
     {
         return [
-            'invoice' => [
-                'id' => $this->invoice->id,
-                'person_id' => $this->invoice->person_id,
-                'total_amount' => $this->invoice->total_amount,
-                'paid_amount' => $this->invoice->paid_amount,
-                'balance' => $this->invoice->balance,
-                'settled' => $this->invoice->settled,
-            ],
+            'invoice_id' => $this->invoice->id,
+            'person_id' => $this->invoice->person_id,
         ];
     }
 }

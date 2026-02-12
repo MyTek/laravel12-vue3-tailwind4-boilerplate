@@ -15,4 +15,7 @@ chmod -R ug+rwX /var/www/html/storage /var/www/html/bootstrap/cache 2>/dev/null 
 # Run Reverb in background
 php artisan reverb:start --host=0.0.0.0 --port=8081 > /proc/1/fd/1 2>/proc/1/fd/2 &
 
+# Run Queue worker in background (needed for ShouldBroadcast events if they are queued)
+php artisan queue:work --sleep=1 --tries=3 --timeout=0 > /proc/1/fd/1 2>/proc/1/fd/2 &
+
 exec "$@"

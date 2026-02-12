@@ -24,10 +24,13 @@ class PaymentController extends Controller
 
         if ($request->boolean('use_factory')) {
             $payment = Payment::factory()->create($data);
+            event(new \App\Events\PaymentCreated($payment->fresh()));
             return new PaymentResource($payment);
         }
 
         $payment = Payment::create($data);
+
+        event(new \App\Events\PaymentCreated($payment->fresh()));
         return new PaymentResource($payment);
     }
 
@@ -39,6 +42,7 @@ class PaymentController extends Controller
     public function update(UpdatePaymentRequest $request, Payment $payment)
     {
         $payment->update($request->validated());
+        event(new \App\Events\PaymentCreated($payment->fresh()));
         return new PaymentResource($payment);
     }
 
